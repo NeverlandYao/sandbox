@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人工智能分类：从专用到超越</title>
+    <style>
+        :root {
+            --bg-color: #f8fbff;
+            --ani-color: #4a90e2;
+            --agi-color: #764ba2;
+            --asi-color: #ff4757;
+            --text-main: #2c3e50;
+            --text-sub: #5d6d7e;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --card-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #visual-area {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 动态背景层 */
+        .grid-bg {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: 
+                linear-gradient(rgba(74, 144, 226, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74, 144, 226, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(45deg);
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            from { transform: rotateX(45deg) translateY(0); }
+            to { transform: rotateX(45deg) translateY(500px); }
+        }
+
+        /* 场景容器 */
+        #stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .scene.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* 卡片样式 */
+        .info-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.5);
+            padding: 40px 60px;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .scene-copy {
+            max-width: 560px;
+            padding: 20px 24px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        .type-tag {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 视觉元素 */
+        .visual-container {
+            height: 250px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ANI 专用：单一任务图标 */
+        .ani-node {
+            width: 80px;
+            height: 80px;
+            background: var(--ani-color);
+            border-radius: 15px;
+            margin: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3);
+        }
+
+        /* AGI 专用：大脑神经网络 */
+        .agi-brain {
+            width: 200px;
+            height: 200px;
+            fill: var(--agi-color);
+            filter: drop-shadow(0 0 15px rgba(118, 75, 162, 0.4));
+        }
+
+        /* ASI 专用：爆发的能量 */
+        .asi-core {
+            width: 120px;
+            height: 120px;
+            background: var(--asi-color);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 50px var(--asi-color);
+            animation: pulse-red 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 30px var(--asi-color); }
+            50% { transform: scale(1.1); box-shadow: 0 0 80px var(--asi-color); }
+            100% { transform: scale(1); box-shadow: 0 0 30px var(--asi-color); }
+        }
+
+        /* 字幕 */
+        #subtitle-box {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            padding: 20px 50px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        #progress-container {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(74, 144, 226, 0.12);
+            z-index: 120;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--ani-color), var(--agi-color), var(--asi-color));
+            transition: width 0.1s linear;
+        }
+
+        .cn-sub {
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .en-sub {
+            font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+            color: var(--text-sub);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            #stage { transform: scale(0.6); }
+            #subtitle-box { padding: 15px 5%; min-height: 100px; }
+            .ladder { right: 10px; transform: scale(0.6) translateY(-50%); transform-origin: right center; }
+            .scene-copy { padding: 16px 18px; max-width: 440px; }
+        }
+
+        /* 底部阶梯进度 */
+        .ladder {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 20px;
+        }
+
+        .step {
+            width: 60px;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            transition: all 0.5s;
+        }
+
+        .step.active-ani { background: var(--ani-color); width: 80px; }
+        .step.active-agi { background: var(--agi-color); width: 100px; }
+        .step.active-asi { background: var(--asi-color); width: 120px; }
+
+    </style>
+</head>
+<body>
+
+<div id="video-container">
+    <div class="grid-bg"></div>
+
+    <div id="visual-area">
+    <div class="ladder">
+        <div class="step" id="step-asi"></div>
+        <div class="step" id="step-agi"></div>
+        <div class="step" id="step-ani"></div>
+    </div>
+
+    <div id="stage">
+        <!-- 场景 1: ANI -->
+        <div id="scene-ani" class="scene">
+            <div class="visual-container">
+                <div class="ani-node"><svg width="40" height="40" fill="white" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>
+                <div class="ani-node" style="transform: scale(1.2);"><svg width="40" height="40" fill="white" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+                <div class="ani-node"><svg width="40" height="40" fill="white" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+            </div>
+            <div class="info-card scene-copy">
+                <span class="type-tag" style="background: var(--ani-color);">Weak AI / ANI</span>
+                <h2 style="margin-bottom: 10px;">弱人工智能 (专用人工智能)</h2>
+                <p style="color:var(--text-sub); line-height:1.6;">专注于特定任务的专家。虽然在语音识别、推荐算法等领域超越人类，但无法跨出预设规则的边界。</p>
+            </div>
+        </div>
+
+        <!-- 场景 2: AGI -->
+        <div id="scene-agi" class="scene">
+            <div class="visual-container">
+                <svg class="agi-brain" viewBox="0 0 100 100">
+                    <path d="M50 15c-15 0-25 12-25 25s10 25 25 45c15-20 25-32 25-45s-10-25-25-25z" opacity="0.2"/>
+                    <circle cx="50" cy="40" r="10" />
+                    <g fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="50" cy="40" r="30" stroke-dasharray="4 2">
+                            <animateTransform attributeName="transform" type="rotate" from="0 50 40" to="360 50 40" dur="10s" repeatCount="indefinite" />
+                        </circle>
+                    </g>
+                </svg>
+            </div>
+            <div class="info-card scene-copy">
+                <span class="type-tag" style="background: var(--agi-color);">General AI / AGI</span>
+                <h2 style="margin-bottom: 10px;">强人工智能 (通用人工智能)</h2>
+                <p style="color:var(--text-sub); line-height:1.6;">具备人类水平的通用智能。它能像人类一样理解、学习、推理并解决多领域问题。目前仍处于理论与研发阶段。</p>
+            </div>
+        </div>
+
+        <!-- 场景 3: ASI -->
+        <div id="scene-asi" class="scene">
+            <div class="visual-container">
+                <div class="asi-core">
+                    <div style="position:absolute; width:100%; height:100%; border:2px solid var(--asi-color); border-radius:50%; transform: scale(1.5); opacity:0.3;"></div>
+                    <div style="position:absolute; width:100%; height:100%; border:1px solid var(--asi-color); border-radius:50%; transform: scale(2); opacity:0.1;"></div>
+                </div>
+            </div>
+            <div class="info-card scene-copy">
+                <span class="type-tag" style="background: var(--asi-color);">Super AI / ASI</span>
+                <h2 style="margin-bottom: 10px;">超人工智能</h2>
+                <p style="color:var(--text-sub); line-height:1.6;">人工智能的终极演化。其智能水平全方位超越人类，拥有自我进化、情感及解决人类终极难题的能力，同时也伴随着巨大的伦理挑战。</p>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <div id="subtitle-box">
+        <div class="cn-sub" id="cn-text">探索人工智能的三大阶梯</div>
+        <div class="en-sub" id="en-text">Exploring the Three Tiers of Artificial Intelligence</div>
+    </div>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+</div>
+
+<script>
+    const timeline = [
+        {
+            start: 0,
+            end: 4000,
+            scene: null,
+            cn: "人工智能根据其智能深度，通常被分为三个层次。",
+            en: "AI is generally categorized into three levels based on its depth of intelligence."
+        },
+        {
+            start: 4000,
+            end: 12000,
+            scene: "scene-ani",
+            step: "step-ani",
+            activeClass: "active-ani",
+            cn: "弱人工智能 (ANI)：专注于特定任务的专家，无法跨出预设规则的边界。",
+            en: "Narrow AI (ANI): Specializes in specific tasks, unable to step outside predefined rules."
+        },
+        {
+            start: 12000,
+            end: 20000,
+            scene: "scene-agi",
+            step: "step-agi",
+            activeClass: "active-agi",
+            cn: "强人工智能 (AGI)：具备人类水平的通用理解、学习与推理能力。",
+            en: "General AI (AGI): Possesses human-level universal understanding, learning, and reasoning."
+        },
+        {
+            start: 20000,
+            end: 28000,
+            scene: "scene-asi",
+            step: "step-asi",
+            activeClass: "active-asi",
+            cn: "超人工智能 (ASI)：全方位超越人类，拥有自我进化与解决终极难题的能力。",
+            en: "Super AI (ASI): Surpasses human limits in all aspects, with the ability to self-evolve."
+        },
+        {
+            start: 28000,
+            end: 32000,
+            scene: null,
+            cn: "从工具到伙伴，再到超越，这就是AI进化的蓝图。",
+            en: "From tools to partners, to transcendence—this is the blueprint of AI evolution."
+        }
+    ];
+
+    const cnText = document.getElementById('cn-text');
+    const enText = document.getElementById('en-text');
+    const scenes = document.querySelectorAll('.scene');
+    const steps = document.querySelectorAll('.step');
+    const progressBar = document.getElementById('progress-bar');
+    const totalDuration = 32000;
+
+    function updateFrame(elapsed) {
+        const current = timeline.find(item => elapsed >= item.start && elapsed < item.end);
+
+        progressBar.style.width = `${(elapsed / totalDuration) * 100}%`;
+        
+        if (current) {
+            if (cnText.innerText !== current.cn) {
+                cnText.innerText = current.cn;
+                enText.innerText = current.en;
+            }
+
+            // 切换场景
+            scenes.forEach(s => {
+                if (s.id === current.scene) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+
+            // 切换进度阶梯
+            steps.forEach(st => {
+                st.className = 'step'; // 重置
+                if (current.step && st.id === current.step) {
+                    st.classList.add(current.activeClass);
+                } else if (current.step) {
+                    // 如果当前在更高级别，保持低级别点亮
+                    const levels = ['step-ani', 'step-agi', 'step-asi'];
+                    const currentIndex = levels.indexOf(current.step);
+                    const stepIndex = levels.indexOf(st.id);
+                    if (stepIndex < currentIndex) {
+                        st.style.background = '#ccc';
+                        st.style.opacity = '0.5';
+                    }
+                }
+            });
+        }
+    }
+
+    let startTime = null;
+    function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        let elapsed = timestamp - startTime;
+
+        if (elapsed > totalDuration) {
+            startTime = timestamp; // 循环
+            elapsed = 0;
+        }
+
+        updateFrame(elapsed);
+        requestAnimationFrame(animate);
+    }
+
+    window.onload = () => {
+        requestAnimationFrame(animate);
+    };
+</script>
+
+</body>
+</html>

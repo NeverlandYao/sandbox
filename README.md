@@ -1,22 +1,66 @@
-# Node.js Example Project
+# 智语奇旅・AI 编程助教
 
-This is a simple Node.js server application example that demonstrates basic HTTP server functionality.
+这是一个结合了“AI 知识探秘”和“Python 编程教学（if/for）”的互动式教学平台。学生可以通过语音或文字与 AI 助教“小智”进行实时互动，并在游戏化的场景中学习人工智能核心特征。
 
-## Project Description
+## 🌟 主要功能板块
 
-This project creates a basic HTTP server that listens on 0.0.0.0:corresponding port and returns a "Hello World!" message. The project supports both development and production environment modes.
+### 1. AI 知识探秘
+- **玩法**：动态视觉演示。
+- **内容**：直观展示人工智能起源与发展、AI 核心特征（自主性、学习能力等）以及 AI 的分类（弱人工智能、强人工智能、超人工智能）。
+- **操作**：点击“人工智能概述”、“AI 的核心特征”、“人工智能分类”三个按钮，即可观看对应知识点的炫酷动态动画演示。
 
-## Environment
+### 2. 创想挑战
+- **任务一：智能语音助手测试**
+  - **玩法**：直接与 AI 语音助手对话。
+  - **操作**：支持语音输入（需在 HTTPS/localhost 下）和文字输入。学生可以下达常规指令、模糊指令或进行连续对话，体验真实语音助手的响应。
+- **任务二：设计应用场景**
+  - **玩法**：填写场景设计表单。
+  - **操作**：学生根据生活痛点，填写场景描述、功能设计和预期效果。提交后，AI 会自动给出专业的点评和优化建议。
 
-This project runs on a Debian 12 system with Node.js, which is pre-configured in the Devbox environment. You don't need to worry about setting up Node.js or system dependencies yourself. The development environment includes all necessary tools for building and running Node.js applications. If you need to make adjustments to match your specific requirements, you can modify the configuration files accordingly.
+### 3. 编程小课堂
+- **玩法**：与 AI 助教自由问答。
+- **内容**：专注于 Python 中的分支（if）与循环（for）结构教学。
+- **操作**：可以通过文字、语音输入问题，或点击下方的快捷提示按钮。AI 会用幽默易懂的语言及 Python 代码示例进行解答。
 
-## Project Execution
-**Development mode:** For normal development environment, simply enter Devbox and run `bash entrypoint.sh` in the terminal.
-**Production mode:** After release, the project will be automatically packaged into a Docker image and deployed according to the `entrypoint.sh` script and command parameters.
+---
 
-Within Devbox, you only need to focus on development - you can trust that everything is application-ready XD
+## 🚀 如何运行本项目
 
+### 前置要求
+- Node.js (推荐 v18 或以上版本)
+- PostgreSQL 数据库（用于存储交互和行为数据）
+- SiliconFlow API Key（用于调用 LLM 大模型和 ASR 语音识别）
 
-DevBox: Code. Build. Deploy. We've Got the Rest.
+### 启动步骤
 
-With DevBox, you can focus entirely on writing great code while we handle the infrastructure, scaling, and deployment. Seamless development from start to production. 
+1. **安装依赖**
+   在终端中运行以下命令安装必需的依赖包：
+   ```bash
+   npm install
+   ```
+
+2. **配置环境变量**
+   在项目根目录创建一个 `.env` 文件，并填入以下配置：
+   ```env
+   SILICONFLOW_API_KEY="你的_SiliconFlow_API_Key"
+   DATABASE_URL="你的_PostgreSQL_数据库连接串"
+   PORT=8080
+   ```
+
+3. **启动服务**
+   在终端中运行启动命令：
+   ```bash
+   npm run dev
+   ```
+   *注意：如果报错 `EADDRINUSE: address already in use`，说明端口被占用，请先停止其他占用 8080 端口的服务。*
+
+4. **访问应用**
+   启动成功后，在浏览器中打开 `http://localhost:8080` 即可访问。
+   *(注：使用语音输入功能需要开启浏览器的麦克风权限，且必须在 localhost 或 HTTPS 环境下才能生效。)*
+
+---
+
+## 📊 数据统计
+本系统会自动将用户的交互数据存入您配置的 PostgreSQL 数据库中：
+- `sandbox_dialog` 表：存储用户与 AI 的所有对话记录（包含提问与回复）。
+- `sandbox_behavior` 表：存储用户的界面操作行为（如点击按钮、切换 Tab、提交表单等），方便后续做教学分析。

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人工智能概述 - 视觉演示</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --primary-blue: #4a90e2;
+            --secondary-purple: #7b61ff;
+            --text-dark: #2c3e50;
+            --text-light: #5d6d7e;
+            --accent-glow: rgba(74, 144, 226, 0.3);
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 响应式容器 */
+        #video-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, #ffffff 0%, #e6eef8 100%);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #visual-area {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 背景装饰动画 */
+        .bg-element {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 1;
+            opacity: 0.4;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(100px, 50px) scale(1.2); }
+        }
+
+        /* 场景控制 */
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .scene.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* 视觉元素样式 */
+        .visual-box {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 核心大脑 SVG 动画 */
+        .brain-svg {
+            width: 300px;
+            height: 300px;
+            filter: drop-shadow(0 0 20px var(--accent-glow));
+        }
+
+        .node {
+            fill: var(--primary-blue);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .connection {
+            stroke: var(--primary-blue);
+            stroke-width: 1;
+            opacity: 0.3;
+            stroke-dasharray: 100;
+            animation: dash 5s linear infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -200; }
+        }
+
+        /* 技术层：齿轮与数据 */
+        .tech-icon {
+            font-size: 80px;
+            color: var(--primary-blue);
+            position: absolute;
+        }
+
+        .gear {
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 哲学层：镜像思维 */
+        .phi-container {
+            display: flex;
+            gap: 100px;
+            align-items: center;
+        }
+
+        .thinker-icon {
+            width: 150px;
+            height: 150px;
+            fill: var(--text-light);
+        }
+
+        /* 字幕区域 */
+        #subtitle-area {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            padding: 20px 10%;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .cn-sub {
+            font-size: clamp(1.2rem, 4vw, 2.2rem);
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+        }
+
+        .en-sub {
+            font-size: clamp(0.8rem, 2.5vw, 1.2rem);
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .visual-box { transform: scale(0.6); }
+            .phi-container { transform: scale(0.6); gap: 40px; }
+            #subtitle-area { padding: 15px 5%; min-height: 100px; }
+        }
+
+        /* 进度条 */
+        #progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-purple));
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+
+<div id="video-container">
+    <!-- 动态背景 -->
+    <div class="bg-element" style="width: 600px; height: 600px; background: #e0e7ff; top: -10%; left: -10%;"></div>
+    <div class="bg-element" style="width: 500px; height: 500px; background: #f5f3ff; bottom: -10%; right: -10%; animation-delay: -5s;"></div>
+
+    <div id="visual-area">
+    <!-- 场景 1: 定义与起源 -->
+    <div id="scene-1" class="scene">
+        <div class="visual-box">
+            <svg class="brain-svg" viewBox="0 0 200 200">
+                <circle class="node" cx="100" cy="100" r="40" fill="none" stroke="var(--primary-blue)" stroke-width="2" />
+                <circle class="node" cx="100" cy="100" r="10" />
+                <g class="connections">
+                    <line class="connection" x1="100" y1="60" x2="100" y2="20" />
+                    <line class="connection" x1="140" y1="100" x2="180" y2="100" />
+                    <line class="connection" x1="100" y1="140" x2="100" y2="180" />
+                    <line class="connection" x1="60" y1="100" x2="20" y2="100" />
+                </g>
+                <text x="50%" y="115" text-anchor="middle" font-size="12" fill="var(--primary-blue)" font-weight="bold">COMPUTER SCIENCE</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 场景 2: 技术能力 (数据/推理/决策) -->
+    <div id="scene-2" class="scene">
+        <div class="visual-box">
+            <svg width="400" height="300" viewBox="0 0 400 300">
+                <!-- 齿轮组 -->
+                <g class="gear" style="transform-origin: 100px 150px;">
+                    <path d="M120 150 A20 20 0 1 0 80 150 A20 20 0 1 0 120 150" fill="none" stroke="var(--primary-blue)" stroke-width="8" stroke-dasharray="10 5" />
+                    <circle cx="100" cy="150" r="15" fill="var(--primary-blue)" />
+                </g>
+                <g class="gear" style="transform-origin: 160px 100px; animation-direction: reverse;">
+                    <path d="M180 100 A20 20 0 1 0 140 100 A20 20 0 1 0 180 100" fill="none" stroke="var(--secondary-purple)" stroke-width="8" stroke-dasharray="8 4" />
+                    <circle cx="160" cy="100" r="12" fill="var(--secondary-purple)" />
+                </g>
+                <!-- 数据流线 -->
+                <path d="M220 150 L350 150" stroke="#ddd" stroke-width="2" marker-end="url(#arrow)" />
+                <rect x="230" y="130" width="100" height="40" rx="5" fill="white" stroke="var(--primary-blue)" />
+                <text x="280" y="155" text-anchor="middle" font-size="14" fill="var(--text-dark)">DECISION</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 场景 3: 哲学思考 (意识与思维) -->
+    <div id="scene-3" class="scene">
+        <div class="phi-container">
+            <div style="text-align: center;">
+                <svg class="thinker-icon" viewBox="0 0 24 24"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,12,10s10-4.48,10-10S17.52,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8 S16.41,20,12,20z M13,7h-2v6h6v-2h-4V7z"/></svg>
+                <p style="margin-top:10px; font-weight:bold;">HUMAN MIND</p>
+            </div>
+            <div style="font-size: 40px; color: var(--secondary-purple);">?</div>
+            <div style="text-align: center;">
+                <svg class="thinker-icon" viewBox="0 0 24 24" style="fill: var(--primary-blue);"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/></svg>
+                <p style="margin-top:10px; font-weight:bold; color: var(--primary-blue);">MACHINE AI</p>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- 字幕区域 -->
+    <div id="subtitle-area">
+        <div class="cn-sub" id="cn-text">正在初始化...</div>
+        <div class="en-sub" id="en-text">Initializing...</div>
+    </div>
+
+    <!-- 底部进度 -->
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+</div>
+
+<script>
+    const script = [
+        {
+            start: 0,
+            end: 5000,
+            scene: 'scene-1',
+            cn: "人工智能（AI）是计算机科学的一个重要分支。",
+            en: "Artificial Intelligence (AI) is a major branch of computer science."
+        },
+        {
+            start: 5000,
+            end: 10000,
+            scene: 'scene-1',
+            cn: "它旨在开发能够执行通常需要人类智能才能完成的任务的系统。",
+            en: "It aims to develop systems that perform tasks requiring human intelligence."
+        },
+        {
+            start: 10000,
+            end: 16000,
+            scene: 'scene-2',
+            cn: "从技术层面看，AI通过程序模仿人类行为，处理数据并进行逻辑推理。",
+            en: "Technically, AI mimics human behavior, processing data and reasoning logically."
+        },
+        {
+            start: 16000,
+            end: 22000,
+            scene: 'scene-2',
+            cn: "它能够做出决策，并在一定程度上实现自我学习与进化。",
+            en: "It can make decisions and achieve a degree of self-learning and evolution."
+        },
+        {
+            start: 22000,
+            end: 28000,
+            scene: 'scene-3',
+            cn: "从哲学层面看，它引发了关于机器是否拥有意识的深刻思考。",
+            en: "Philosophically, it sparks deep reflection on whether machines possess consciousness."
+        },
+        {
+            start: 28000,
+            end: 34000,
+            scene: 'scene-1',
+            cn: "人工智能：连接计算机程序与思维奥秘的桥梁。",
+            en: "AI: A bridge between computer programs and the mysteries of the mind."
+        }
+    ];
+
+    const totalTime = 34000;
+    const cnEl = document.getElementById('cn-text');
+    const enEl = document.getElementById('en-text');
+    const progressBar = document.getElementById('progress-bar');
+    const scenes = document.querySelectorAll('.scene');
+
+    let startTime = null;
+
+    function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        let elapsed = timestamp - startTime;
+
+        if (elapsed > totalTime) {
+            startTime = timestamp;
+            elapsed = 0;
+        }
+
+        // 更新进度条
+        progressBar.style.width = (elapsed / totalTime * 100) + '%';
+
+        // 查找当前脚本
+        const current = script.find(s => elapsed >= s.start && elapsed < s.end);
+        
+        if (current) {
+            // 更新文字 (简化更新逻辑，避免动画重叠)
+            if (cnEl.innerText !== current.cn) {
+                cnEl.innerText = current.cn;
+                enEl.innerText = current.en;
+            }
+
+            // 更新场景
+            scenes.forEach(s => {
+                if (s.id === current.scene) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // 渐入文字效果
+    cnEl.style.transition = "opacity 0.5s";
+    enEl.style.transition = "opacity 0.5s";
+
+    window.onload = () => {
+        requestAnimationFrame(animate);
+    };
+</script>
+
+</body>
+</html>

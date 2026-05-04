@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探索人工智能的核心特征 - 视觉演示</title>
+    <style>
+        :root {
+            --bg-color: #f7f9fc;
+            --accent-color: #4a90e2;
+            --text-main: #2c3e50;
+            --text-sub: #5d6d7e;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --soft-blue: #e3f2fd;
+            --soft-purple: #f3e5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* 视频容器 */
+        #video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            perspective: 1000px;
+        }
+
+        /* 背景装饰 */
+        .bg-blob {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--soft-blue) 0%, rgba(255,255,255,0) 70%);
+            z-index: -1;
+            filter: blur(50px);
+            border-radius: 50%;
+            transition: all 2s ease-in-out;
+        }
+
+        /* 主画布：展示图形 */
+        #stage {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 元素样式 */
+        .element {
+            position: absolute;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .element.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 字幕样式 */
+        #subtitle-container {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            padding: 20px 50px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .subtitle-cn {
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .subtitle-en {
+            font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+            color: var(--text-sub);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            #stage { transform: scale(0.6); }
+            #subtitle-container { padding: 15px 5%; min-height: 100px; }
+            .scene-card { padding: 20px; }
+        }
+
+        /* 具体的图形组件 */
+        .ai-brain {
+            width: 200px;
+            height: 200px;
+            fill: url(#grad1);
+        }
+
+        .feature-icon {
+            width: 150px;
+            height: 150px;
+        }
+
+        /* 进度条 */
+        #progress-container {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(74, 144, 226, 0.12);
+            z-index: 120;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* 场景特定的样式 */
+        .node { fill: var(--accent-color); }
+        .line { stroke: var(--accent-color); stroke-width: 2; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2s forwards; }
+        
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .pulse { animation: pulse 3s infinite ease-in-out; }
+
+        /* 场景卡片布局 */
+        .scene-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="video-container">
+    <div id="bg-blob-1" class="bg-blob" style="top: -10%; left: -10%;"></div>
+    <div id="bg-blob-2" class="bg-blob" style="bottom: -10%; right: -10%; background: var(--soft-purple);"></div>
+
+    <div id="stage">
+        <!-- 初始场景 -->
+        <div id="scene-intro" class="element">
+            <svg class="ai-brain pulse" viewBox="0 0 100 100">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <path d="M50 10 C30 10 15 25 15 45 C15 60 25 75 40 85 L50 95 L60 85 C75 75 85 60 85 45 C85 25 70 10 50 10 Z" fill="url(#grad1)"/>
+                <circle cx="50" cy="45" r="15" fill="white" opacity="0.2"/>
+            </svg>
+            <h1 style="text-align:center; margin-top:20px; font-size:2.5rem;">AI 的核心特征</h1>
+        </div>
+
+        <!-- 场景1: 自主性 -->
+        <div id="scene-1" class="element">
+            <div class="scene-card">
+                <svg class="feature-icon" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#4a90e2" stroke-width="2" stroke-dasharray="5,5"/>
+                    <rect x="35" y="40" width="30" height="20" rx="5" fill="#4a90e2">
+                        <animateTransform attributeName="transform" type="translate" from="-5 0" to="5 0" dur="2s" repeatCount="indefinite" />
+                    </rect>
+                    <circle cx="40" cy="65" r="5" fill="#2c3e50"/>
+                    <circle cx="60" cy="65" r="5" fill="#2c3e50"/>
+                </svg>
+                <h2 style="margin-top:20px;">自主性 Autonomy</h2>
+            </div>
+        </div>
+
+        <!-- 场景2: 学习能力 -->
+        <div id="scene-2" class="element">
+            <div class="scene-card">
+                <svg class="feature-icon" viewBox="0 0 100 100">
+                    <path id="curve" d="M10 80 Q 50 80 90 20" fill="none" stroke="#4a90e2" stroke-width="3" />
+                    <circle r="4" fill="#764ba2">
+                        <animateMotion dur="2s" repeatCount="indefinite">
+                            <mpath href="#curve"/>
+                        </animateMotion>
+                    </circle>
+                    <text x="10" y="20" font-size="8" fill="#5d6d7e">模型优化 Improvement</text>
+                </svg>
+                <h2 style="margin-top:20px;">学习能力 Learning</h2>
+            </div>
+        </div>
+
+        <!-- 场景3: 交互与适应 -->
+        <div id="scene-3" class="element">
+            <div class="scene-card">
+                <svg class="feature-icon" viewBox="0 0 100 100">
+                    <circle cx="30" cy="50" r="10" fill="#667eea"/>
+                    <circle cx="70" cy="50" r="10" fill="#764ba2"/>
+                    <path d="M40 45 Q 50 35 60 45" fill="none" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow)"/>
+                    <path d="M60 55 Q 50 65 40 55" fill="none" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow)"/>
+                </defs>
+                </svg>
+                <h2 style="margin-top:20px;">交互与适应 Interaction</h2>
+            </div>
+        </div>
+
+        <!-- 场景4: 感知与理解 -->
+        <div id="scene-4" class="element">
+            <div class="scene-card">
+                <svg class="feature-icon" viewBox="0 0 100 100">
+                    <path d="M20 50 C 20 30 80 30 80 50 C 80 70 20 70 20 50" fill="none" stroke="#4a90e2" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="12" fill="#4a90e2">
+                        <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite" />
+                    </circle>
+                    <line x1="20" y1="20" x2="40" y2="40" stroke="#eee" />
+                </svg>
+                <h2 style="margin-top:20px;">感知与理解 Perception</h2>
+            </div>
+        </div>
+
+        <!-- 场景5: 推理与决策 -->
+        <div id="scene-5" class="element">
+            <div class="scene-card">
+                <svg class="feature-icon" viewBox="0 0 100 100">
+                    <rect x="40" y="10" width="20" height="20" rx="2" fill="#667eea"/>
+                    <path d="M50 30 L30 60 M50 30 L70 60" stroke="#ccc" stroke-width="2"/>
+                    <rect x="20" y="60" width="20" height="20" rx="2" fill="#764ba2"/>
+                    <rect x="60" y="60" width="20" height="20" rx="2" fill="#4a90e2"/>
+                </svg>
+                <h2 style="margin-top:20px;">推理与决策 Reasoning</h2>
+            </div>
+        </div>
+    </div>
+
+    <div id="subtitle-container">
+        <div class="subtitle-cn" id="sub-cn">准备开始...</div>
+        <div class="subtitle-en" id="sub-en">Ready to start...</div>
+    </div>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+</div>
+
+<script>
+    const script = [
+        {
+            time: 0,
+            duration: 4000,
+            scene: 'scene-intro',
+            cn: '人工智能系统正以前所未有的方式改变世界。',
+            en: 'AI systems are changing the world in unprecedented ways.'
+        },
+        {
+            time: 4000,
+            duration: 5000,
+            scene: 'scene-1',
+            cn: '首先是“自主性”：AI 能在无人工干预下完成复杂任务，如自动驾驶。',
+            en: 'First is "Autonomy": AI completes complex tasks without human intervention.'
+        },
+        {
+            time: 9000,
+            duration: 6000,
+            scene: 'scene-2',
+            cn: '其次是“学习能力”：通过海量数据训练，AI 能够自我进化并进行创作。',
+            en: 'Second is "Learning": Through data, AI evolves and learns to create.'
+        },
+        {
+            time: 15000,
+            duration: 6000,
+            scene: 'scene-3',
+            cn: '它具备“交互与适应性”：根据你的反馈，实时调整服务策略。',
+            en: 'It features "Interaction": Dynamically adjusting based on user feedback.'
+        },
+        {
+            time: 21000,
+            duration: 6000,
+            scene: 'scene-4',
+            cn: '“感知与理解”让机器能听会看，甚至读懂人类的语言与情感。',
+            en: '"Perception" allows machines to see, hear, and understand human language.'
+        },
+        {
+            time: 27000,
+            duration: 6000,
+            scene: 'scene-5',
+            cn: '最后是“推理与决策”：在复杂环境下计算最优解，辅助人类选择。',
+            en: 'Finally, "Reasoning": Calculating optimal solutions in complex scenarios.'
+        },
+        {
+            time: 33000,
+            duration: 4000,
+            scene: 'scene-intro',
+            cn: '这五大核心特征，构成了我们今天所见的智能时代。',
+            en: 'These five pillars define the era of intelligence we live in today.'
+        }
+    ];
+
+    const stage = document.getElementById('stage');
+    const subCn = document.getElementById('sub-cn');
+    const subEn = document.getElementById('sub-en');
+    const progressBar = document.getElementById('progress-bar');
+    const totalDuration = 37000;
+
+    function updateScene(currentTime) {
+        let currentItem = script.find(item => currentTime >= item.time && currentTime < item.time + item.duration);
+        
+        if (currentItem) {
+            // 更新字幕
+            if (subCn.innerText !== currentItem.cn) {
+                subCn.innerText = currentItem.cn;
+                subEn.innerText = currentItem.en;
+            }
+
+            // 更新可见场景
+            document.querySelectorAll('.element').forEach(el => {
+                if (el.id === currentItem.scene) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        // 更新进度条
+        const progress = (currentTime / totalDuration) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    let startTime = null;
+    function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        let elapsed = timestamp - startTime;
+
+        if (elapsed < totalDuration) {
+            updateScene(elapsed);
+            requestAnimationFrame(animate);
+        } else {
+            // 循环播放
+            startTime = timestamp;
+            requestAnimationFrame(animate);
+        }
+    }
+
+    // 启动动画
+    window.onload = () => {
+        requestAnimationFrame(animate);
+        
+        // 增加背景漂浮效果
+        document.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.05;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.05;
+            document.getElementById('bg-blob-1').style.transform = `translate(${moveX}px, ${moveY}px)`;
+            document.getElementById('bg-blob-2').style.transform = `translate(${-moveX}px, ${-moveY}px)`;
+        });
+    };
+</script>
+
+</body>
+</html>

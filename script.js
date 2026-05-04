@@ -34,9 +34,8 @@ const voiceStatus    = document.querySelector("#voiceStatus");
 const speakToggleBtn = document.querySelector("#speakToggleBtn");
 const quickButtons   = document.querySelectorAll(".chip-btn");
 
-const gameLog        = document.querySelector("#gameLog");
-const gameOptions    = document.querySelector("#gameOptions");
-const resetGameBtn   = document.querySelector("#resetGameBtn");
+const exploreBtns    = document.querySelectorAll(".explore-btn");
+const exploreIframe  = document.getElementById("exploreIframe");
 
 const task1Log             = document.querySelector("#task1Log");
 const task1Input           = document.querySelector("#task1Input");
@@ -93,7 +92,6 @@ function bootstrap() {
   bindEvents();
   initVoiceInput();
   updateSpeakButton();
-  resetGame();
   resetChallenge();
 }
 
@@ -153,6 +151,27 @@ function bindEvents() {
       void handleUserCommand(btn.dataset.command, { source: "quick_action" });
     })
   );
+
+  // AI 知识探秘 iframe 切换事件
+  if (exploreBtns.length > 0 && exploreIframe) {
+    exploreBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        // 更新按钮样式
+        exploreBtns.forEach(b => {
+          b.classList.remove("primary-btn");
+          b.classList.add("ghost-btn");
+        });
+        btn.classList.remove("ghost-btn");
+        btn.classList.add("primary-btn");
+
+        // 更新 iframe 资源
+        const src = btn.getAttribute("data-src");
+        exploreIframe.src = src;
+
+        trackBehavior("explore_view", { file: src });
+      });
+    });
+  }
 
   // 创想挑战事件
   if (task1SendBtn) {
@@ -607,117 +626,7 @@ function getOrCreateUserId() {
   }
 }
 
-// ────────────────────────────────────────────────
-//  AI 知识探秘 游戏逻辑
-// ────────────────────────────────────────────────
-const GAME_SCENES = {
-  0: {
-    msg: "欢迎来到《智语奇旅》！在这里我们将一起探索人工智能的奥秘。你想先探索哪个领域呢？",
-    options: [
-      { label: "1. 了解 AI 核心特征", target: 1 },
-      { label: "2. 了解 AI 的分类", target: 2 }
-    ]
-  },
-  1: {
-    msg: "**AI 的核心特征包括：**\n\n- **自主性**：无人类干预自主完成任务。\n- **学习能力**：从数据中提取规律，不断优化。\n- **交互与适应**：根据反馈动态调整。\n- **感知与理解**：“看懂”图像、“听懂”声音。\n- **推理与决策**：计算最优解，辅助选择。\n\n你想深入了解哪个特征？",
-    options: [
-      { label: "学习能力是怎样的？", target: 11 },
-      { label: "什么是感知与理解？", target: 12 },
-      { label: "返回主菜单", target: 0 }
-    ]
-  },
-  11: {
-    msg: "**学习能力**：AI 系统能够从数据中提取规律，通过训练不断优化自身性能。比如深度学习算法，它不仅能发现特征，还能像人类一样创作文本、图像与代码！\n\n你可以切换到顶部的**“创想挑战”**，去试试语音助手挑战吧！",
-    options: [
-      { label: "返回主菜单", target: 0 }
-    ]
-  },
-  12: {
-    msg: "**感知与理解**：机器不仅能通过传感器“看”和“听”，还能通过算法“读懂”人类语言（自然语言处理）。这是实现人机自然交互的基础！",
-    options: [
-      { label: "返回主菜单", target: 0 }
-    ]
-  },
-  2: {
-    msg: "**AI 可以分为三类：**\n\n- **弱人工智能 (ANI)**：特定领域超越人类，如 Siri。\n- **强人工智能 (AGI)**：像人类一样具有通用理解和解决问题能力。\n- **超人工智能 (ASI)**：智能远超人类，具有自我优化和创新能力。\n\n我们现在用的 AI 大多属于哪一种呢？",
-    options: [
-      { label: "弱人工智能", target: 21 },
-      { label: "强人工智能", target: 22 }
-    ]
-  },
-  21: {
-    msg: "回答正确！✅ 目前我们广泛使用的都是**弱人工智能 (ANI)**，它们只能在特定的预定义领域内工作。\n\n知识探秘已完成，快去顶部的**“创想挑战”**测试你的点子吧！",
-    options: [
-      { label: "返回主菜单", target: 0 }
-    ]
-  },
-  22: {
-    msg: "不对哦~ ❌ 强人工智能目前还处于理论研究阶段，我们现在常用的都是**弱人工智能 (ANI)**。",
-    options: [
-      { label: "返回主菜单", target: 0 }
-    ]
-  }
-};
 
-function resetGame() {
-  if (gameLog) gameLog.innerHTML = "";
-  state.gameHistory = [];
-  setGameState(0);
-}
-
-function setGameState(sceneId) {
-  state.gameState = sceneId;
-  const scene = GAME_SCENES[sceneId];
-  if (scene) {
-    addGameMessage("assistant", scene.msg);
-    renderGameOptions(scene.options);
-  }
-}
-
-function addGameMessage(role, content) {
-  if (!gameLog) return;
-  if (role === "user" || role === "assistant") {
-    state.gameHistory.push({ role, content });
-  }
-
-  const el = document.createElement("div");
-  el.className = `message ${role}`;
-
-  if (role === "assistant") {
-    el.innerHTML = renderMarkdown(content);
-    // 移除 markdown 符号，让语音朗读更自然
-    const speakableText = content.replace(/[*_`#]/g, '');
-    speakText(speakableText);
-  } else {
-    el.textContent = content;
-  }
-
-  gameLog.appendChild(el);
-  gameLog.scrollTop = gameLog.scrollHeight;
-  return el;
-}
-
-function renderGameOptions(options) {
-  if (!gameOptions) return;
-  gameOptions.innerHTML = "";
-  if (!options || options.length === 0) {
-    gameOptions.style.display = "none";
-    return;
-  }
-  
-  gameOptions.style.display = "flex";
-  options.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.className = "game-choice-btn";
-    btn.textContent = opt.label;
-    btn.addEventListener("click", () => {
-      trackBehavior("game_choice", { label: opt.label, target: opt.target });
-      addGameMessage("user", opt.label);
-      setGameState(opt.target);
-    });
-    gameOptions.appendChild(btn);
-  });
-}
 
 // ────────────────────────────────────────────────
 //  创想挑战 逻辑
@@ -820,7 +729,7 @@ async function handleTask2Command() {
 
   if (task2Log) {
     task2Log.style.display = "flex";
-    task2Log.innerHTML = "";
+    task2Log.innerHTML = ""; // 每次提交都清空旧的对话，只显示当前这一次的提交和回复
   }
   
   const userMessage = `【我的场景方案】\n1. 场景描述：${scenario}\n2. 功能设计：${design}\n3. 预期效果：${effect}`;
@@ -837,7 +746,8 @@ async function handleTask2Command() {
 
   const systemPrompt = `你现在是《智语奇旅》的向导。用户正在进行【任务二：设计应用场景】。
 用户提交了包含场景描述、功能设计和预期效果的语音助手方案。
-请对用户的方案进行专业且鼓励的点评，指出其设计的亮点，并分析该方案具体体现了哪些人工智能的核心特征（如感知与理解、交互与适应等）。如果方案有待完善，可以温和地引导用户补充。字数控制在200字以内，分点清晰说明。`;
+请你生成方案，必须**紧扣用户刚才提出的痛点和场景要求**，为他们生成一个全新、富含创意和技术深度的【智能语音助手方案】。不能脱离用户的需求自由发挥。新方案必须包含清晰的“场景描述”、“功能设计”和“预期效果”三部分，作为优秀示范。
+请确保逻辑分明，语言简洁生动，易于理解，总字数控制在600-800字左右。`;
 
   try {
     const response = await fetch("/api/chat", {

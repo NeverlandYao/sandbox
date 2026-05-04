@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>智语奇旅・分支与循环</title>
+  <title>智语奇旅</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -17,13 +17,13 @@
       <button class="nav-tab" data-target="view-programming">编程小课堂</button>
     </nav>
 
-    <!-- 视图 1：AI 知识探秘 (仅选项游戏) -->
+    <!-- 视图 1：AI 知识探秘 -->
     <div id="view-ai-explore" class="view-section active">
       <header class="hero card">
         <div class="hero-copy-block">
           <p class="eyebrow">知识探秘 · 智语奇旅</p>
           <h1>探索 AI 的奥秘</h1>
-          <p class="hero-copy">在这里，通过互动探索人工智能的核心特征和分类，掌握 AI 的基础知识！</p>
+          <p class="hero-copy">在这里，通过动态视觉演示，深入理解人工智能的起源、核心特征与分类！</p>
         </div>
         <div class="hero-mascot">
           <div class="mascot-face">
@@ -31,25 +31,27 @@
             <span></span>
           </div>
           <div class="mascot-mouth"></div>
-          <p class="mascot-text">"点击选项，和我一起探索吧！"</p>
+          <p class="mascot-text">"点击按钮，观看酷炫的 AI 动画演示吧！"</p>
         </div>
       </header>
 
       <section class="card main-panel">
         <div class="panel-head">
           <div>
-            <p class="panel-tag">互动探险</p>
-            <h2>智语奇旅：知识探索</h2>
+            <p class="panel-tag">视觉演示</p>
+            <h2>AI 知识探秘</h2>
           </div>
-          <button id="resetGameBtn" class="ghost-btn">重新开始探险</button>
         </div>
 
-        <div id="gameLog" class="chat-log" aria-live="polite" style="margin-bottom: 16px;"></div>
-        
-        <div id="gameOptions" class="game-options-container">
-          <!-- 动态生成的选项按钮 -->
+        <div class="explore-nav" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button class="primary-btn explore-btn active" data-src="ai-overview.html">1. 人工智能概述</button>
+          <button class="ghost-btn explore-btn" data-src="ai-features.html">2. AI 的核心特征</button>
+          <button class="ghost-btn explore-btn" data-src="ai-categories.html">3. 人工智能分类</button>
         </div>
 
+        <div class="iframe-container">
+          <iframe id="exploreIframe" src="ai-overview.html"></iframe>
+        </div>
       </section>
     </div> <!-- end view-ai-explore -->
 
@@ -118,7 +120,7 @@
           <label for="task2Effect">3. 预期效果（如何提升生活质量）</label>
           <textarea id="task2Effect" rows="2" placeholder="例如：无缝记录灵感，解放双手，提高效率..."></textarea>
           
-          <button id="task2SendBtn" class="primary-btn" style="margin-top: 8px;">提交方案让 AI 点评</button>
+          <button id="task2SendBtn" class="primary-btn" style="margin-top: 8px;">提交方案</button>
         </div>
         
         <div id="task2Log" class="chat-log" style="display: none; margin-top: 16px;" aria-live="polite"></div>
