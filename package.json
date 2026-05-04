@@ -1,0 +1,12 @@
+{
+  "name": "siliconflow-programming-tutor",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "pg": "^8.16.3"
+  },
+  "scripts": {
+    "dev": "PORT=8080 HOST=0.0.0.0 NODE_ENV=development node server.js",
+    "start": "PORT=8080 HOST=0.0.0.0 node server.js"
+  }
+}
