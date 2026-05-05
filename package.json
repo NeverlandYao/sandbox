@@ -6,7 +6,7 @@
     "pg": "^8.16.3"
   },
   "scripts": {
-    "dev": "PORT=8080 HOST=0.0.0.0 NODE_ENV=development node server.js",
-    "start": "PORT=8080 HOST=0.0.0.0 node server.js"
+    "dev": "NODE_ENV=development node server.js",
+    "start": "node server.js"
   }
 }

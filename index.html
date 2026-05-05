@@ -12,56 +12,16 @@
 
     <!-- 导航栏 -->
     <nav class="app-nav card">
-      <button class="nav-tab active" data-target="view-ai-explore">AI 知识探秘</button>
-      <button class="nav-tab" data-target="view-ai-challenge">创想挑战</button>
-      <button class="nav-tab" data-target="view-programming">编程小课堂</button>
+      <button class="nav-tab active" data-target="view-ai-challenge">技能沙盘</button>
     </nav>
 
-    <!-- 视图 1：AI 知识探秘 -->
-    <div id="view-ai-explore" class="view-section active">
+    <!-- 视图：技能沙盘 -->
+    <div id="view-ai-challenge" class="view-section active">
       <header class="hero card">
         <div class="hero-copy-block">
-          <p class="eyebrow">知识探秘 · 智语奇旅</p>
-          <h1>探索 AI 的奥秘</h1>
-          <p class="hero-copy">在这里，通过动态视觉演示，深入理解人工智能的起源、核心特征与分类！</p>
-        </div>
-        <div class="hero-mascot">
-          <div class="mascot-face">
-            <span></span>
-            <span></span>
-          </div>
-          <div class="mascot-mouth"></div>
-          <p class="mascot-text">"点击按钮，观看酷炫的 AI 动画演示吧！"</p>
-        </div>
-      </header>
-
-      <section class="card main-panel">
-        <div class="panel-head">
-          <div>
-            <p class="panel-tag">视觉演示</p>
-            <h2>AI 知识探秘</h2>
-          </div>
-        </div>
-
-        <div class="explore-nav" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
-          <button class="primary-btn explore-btn active" data-src="ai-overview.html">1. 人工智能概述</button>
-          <button class="ghost-btn explore-btn" data-src="ai-features.html">2. AI 的核心特征</button>
-          <button class="ghost-btn explore-btn" data-src="ai-categories.html">3. 人工智能分类</button>
-        </div>
-
-        <div class="iframe-container">
-          <iframe id="exploreIframe" src="ai-overview.html"></iframe>
-        </div>
-      </section>
-    </div> <!-- end view-ai-explore -->
-
-    <!-- 视图 2：AI 创想挑战 (实时对话) -->
-    <div id="view-ai-challenge" class="view-section" style="display: none;">
-      <header class="hero card">
-        <div class="hero-copy-block">
-          <p class="eyebrow">创想挑战 · 智语奇旅</p>
-          <h1>语音助手创想挑战</h1>
-          <p class="hero-copy">在这里，你将化身“AI创想家”，直接测试语音助手，或设计并提交全新的应用场景！</p>
+          <p class="eyebrow">技能沙盘 · 智语奇旅</p>
+          <h1>语音助手技能沙盘</h1>
+          <p class="hero-copy">在这里，你将化身“AI 创想家”，直接测试语音助手，或设计并提交全新的应用场景。</p>
         </div>
         <div class="hero-mascot">
           <div class="mascot-face">
@@ -107,6 +67,7 @@
             <p class="panel-tag">任务二</p>
             <h2>设计应用场景方案</h2>
           </div>
+          <button id="resetTask2Btn" class="ghost-btn">清空方案</button>
         </div>
         <p class="generator-tip" style="margin-bottom: 12px;">以“解决生活中的某个痛点”为目标，设计一个全新的智能语音助手应用场景方案。</p>
         
@@ -126,87 +87,6 @@
         <div id="task2Log" class="chat-log" style="display: none; margin-top: 16px;" aria-live="polite"></div>
       </section>
     </div> <!-- end view-ai-challenge -->
-
-    <!-- 视图 3：编程小课堂 -->
-    <div id="view-programming" class="view-section" style="display: none;">
-      <header class="hero card">
-        <div class="hero-copy-block">
-        <p class="eyebrow">编程思维课 · 分支与循环</p>
-        <h1>跟着小智，用语音学会 if 和 for</h1>
-        <p class="hero-copy">说一句问题，马上得到代码思路、示例和知识点提示。</p>
-      </div>
-      <div class="hero-mascot">
-        <div class="mascot-face">
-          <span></span>
-          <span></span>
-        </div>
-        <div class="mascot-mouth"></div>
-        <p class="mascot-text">"你问编程题，我来一步步讲解。"</p>
-        <div class="hero-loop">for (i = 1; i &lt;= 5; i++)</div>
-      </div>
-    </header>
-
-    <!-- ② 语音编程练习 -->
-    <section class="card main-panel">
-      <div class="panel-head">
-        <div>
-          <p class="panel-tag">语音编程练习</p>
-          <h2>和「小智」学编程</h2>
-        </div>
-        <button id="resetChatBtn" class="ghost-btn">重新开始</button>
-      </div>
-
-      <div class="voice-bar">
-        <button id="voiceBtn" class="voice-btn" type="button">开始语音提问</button>
-        <button id="speakToggleBtn" class="ghost-btn" type="button">朗读讲解：关</button>
-        <div id="voiceStatus" class="voice-status">正在检测语音支持…</div>
-      </div>
-
-      <div id="chatLog" class="chat-log" aria-live="polite"></div>
-
-      <div class="input-area">
-        <label class="sr-only" for="commandInput">输入指令</label>
-        <input
-          id="commandInput"
-          type="text"
-          placeholder="输入问题后按回车发送，例如：什么时候用 if？"
-        >
-        <button id="sendBtn" class="primary-btn">发送</button>
-      </div>
-
-      <div class="quick-actions">
-        <button class="chip-btn" data-command="什么时候用 if">什么时候用 if</button>
-        <button class="chip-btn" data-command="if 和 else 有什么区别">if 和 else 的区别</button>
-        <button class="chip-btn" data-command="帮我判断一个数是不是偶数">判断偶数</button>
-        <button class="chip-btn" data-command="用 for 循环输出 1 到 5">for 输出 1 到 5</button>
-        <button class="chip-btn" data-command="while 循环怎么用">while 怎么用</button>
-        <button class="chip-btn" data-command="for 和 while 有什么区别">for 和 while 的区别</button>
-        <button class="chip-btn" data-command="把重复说三次你好写成循环">重复三次你好</button>
-        <button class="chip-btn" data-command="用循环计算 1 加到 100 的和">1 加到 100</button>
-      </div>
-    </section>
-
-    <!-- ③ 迁移应用 -->
-    <section class="card generator">
-      <div class="panel-head">
-        <div>
-          <p class="panel-tag">迁移应用</p>
-          <h2>把生活场景变成编程题</h2>
-        </div>
-      </div>
-      <p class="generator-tip">描述一个你熟悉的生活场景，AI 会自动生成对应的分支或循环练习题。</p>
-
-      <div class="generator-form">
-        <label for="painInput">写一个生活场景</label>
-        <textarea id="painInput" rows="3" placeholder="例如：早上起床判断今天是不是周末，是的话就睡懒觉，不是就去上学。&#10;或：每天睡前背 10 个英语单词，坚持一个月。"></textarea>
-        <button id="generateBtn" class="primary-btn">AI 生成练习题</button>
-      </div>
-
-      <div id="planOutput" class="plan-output">
-        <div class="empty-state">输入生活场景后，AI 会生成对应的编程练习题，包含题目、思路和示例代码。</div>
-      </div>
-    </section>
-    </div> <!-- end view-programming -->
 
   </main>
 

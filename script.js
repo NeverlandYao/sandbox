@@ -5,7 +5,7 @@ const state = {
   chatHistory: [],
   gameHistory: [],
   gameState: 0,
-  activeTab: "view-ai-explore",
+  activeTab: "view-ai-challenge",
   speechEnabled: false,
   mediaRecorder: null,
   mediaStream: null,
@@ -49,22 +49,66 @@ const task2Scenario        = document.querySelector("#task2Scenario");
 const task2Design          = document.querySelector("#task2Design");
 const task2Effect          = document.querySelector("#task2Effect");
 const task2SendBtn         = document.querySelector("#task2SendBtn");
+const resetTask2Btn        = document.querySelector("#resetTask2Btn");
 const task2Log             = document.querySelector("#task2Log");
 
 // ────────────────────────────────────────────────
 //  行为追踪
 // ────────────────────────────────────────────────
+const behaviorQueue = [];
+let behaviorFlushTimer = null;
+const BEHAVIOR_BATCH_SIZE = 10;
+const BEHAVIOR_FLUSH_DELAY = 1500;
+
 function trackBehavior(action, detail = {}) {
-  fetch("/api/track", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: state.sessionId,
-      userId: state.userId,
-      action,
-      detail
-    })
-  }).catch(() => {});
+  behaviorQueue.push({
+    sessionId: state.sessionId,
+    userId: state.userId,
+    action,
+    detail,
+    createdAt: Date.now()
+  });
+
+  if (behaviorQueue.length >= BEHAVIOR_BATCH_SIZE) {
+    void flushBehaviorQueue();
+    return;
+  }
+
+  if (!behaviorFlushTimer) {
+    behaviorFlushTimer = window.setTimeout(() => {
+      behaviorFlushTimer = null;
+      void flushBehaviorQueue();
+    }, BEHAVIOR_FLUSH_DELAY);
+  }
+}
+
+async function flushBehaviorQueue(useBeacon = false) {
+  if (behaviorFlushTimer) {
+    window.clearTimeout(behaviorFlushTimer);
+    behaviorFlushTimer = null;
+  }
+
+  if (!behaviorQueue.length) return;
+
+  const events = behaviorQueue.splice(0, behaviorQueue.length);
+  const payload = JSON.stringify({ events });
+
+  if (useBeacon && navigator.sendBeacon) {
+    const blob = new Blob([payload], { type: "application/json" });
+    navigator.sendBeacon("/api/track", blob);
+    return;
+  }
+
+  try {
+    await fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true
+    });
+  } catch {
+    behaviorQueue.unshift(...events);
+  }
 }
 
 // ────────────────────────────────────────────────
@@ -85,14 +129,13 @@ let isListening = false;
 window.addEventListener("DOMContentLoaded", bootstrap);
 
 function bootstrap() {
-  addMessage(
-    "assistant",
-    `👋 欢迎来到「分支与循环」课堂！我是小智，专门帮你搞懂 **if** 和 **for**。\n\n你可以：\n- 直接输入问题（回车发送）\n- 点击下方快捷按钮\n- 点击「开始语音提问」用说话的方式提问\n\n试试问我：什么时候用 if？`
-  );
   bindEvents();
   initVoiceInput();
   updateSpeakButton();
   resetChallenge();
+  window.addEventListener("beforeunload", () => {
+    void flushBehaviorQueue(true);
+  });
 }
 
 function bindEvents() {
@@ -118,60 +161,6 @@ function bindEvents() {
       });
     });
   });
-
-  // 编程小课堂事件
-  sendBtn.addEventListener("click", () => void handleUserCommand(commandInput.value.trim(), { source: "text" }));
-  commandInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); void handleUserCommand(commandInput.value.trim(), { source: "text" }); }
-  });
-
-  resetChatBtn.addEventListener("click", () => {
-    trackBehavior("click_button", { button: "resetChatBtn" });
-    resetConversation();
-  });
-  
-  generateBtn.addEventListener("click", () => {
-    trackBehavior("click_button", { button: "generateBtn" });
-    void generatePlan();
-  });
-  
-  voiceBtn.addEventListener("click", () => {
-    trackBehavior("click_button", { button: "voiceBtn" });
-    void toggleVoiceInput();
-  });
-  
-  speakToggleBtn.addEventListener("click", () => {
-    trackBehavior("click_button", { button: "speakToggleBtn" });
-    toggleSpeechOutput();
-  });
-
-  quickButtons.forEach((btn) =>
-    btn.addEventListener("click", () => {
-      trackBehavior("click_quick_action", { command: btn.dataset.command });
-      void handleUserCommand(btn.dataset.command, { source: "quick_action" });
-    })
-  );
-
-  // AI 知识探秘 iframe 切换事件
-  if (exploreBtns.length > 0 && exploreIframe) {
-    exploreBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        // 更新按钮样式
-        exploreBtns.forEach(b => {
-          b.classList.remove("primary-btn");
-          b.classList.add("ghost-btn");
-        });
-        btn.classList.remove("ghost-btn");
-        btn.classList.add("primary-btn");
-
-        // 更新 iframe 资源
-        const src = btn.getAttribute("data-src");
-        exploreIframe.src = src;
-
-        trackBehavior("explore_view", { file: src });
-      });
-    });
-  }
 
   // 创想挑战事件
   if (task1SendBtn) {
@@ -204,6 +193,12 @@ function bindEvents() {
   if (task2SendBtn) {
     task2SendBtn.addEventListener("click", () => void handleTask2Command());
   }
+  if (resetTask2Btn) {
+    resetTask2Btn.addEventListener("click", () => {
+      trackBehavior("click_button", { button: "resetTask2Btn" });
+      resetTask2Form();
+    });
+  }
 }
 
 // ────────────────────────────────────────────────
@@ -211,10 +206,7 @@ function bindEvents() {
 // ────────────────────────────────────────────────
 
 function getActiveVoiceUI() {
-  if (state.activeTab === "view-ai-challenge") {
-    return { btn: task1VoiceBtn, status: task1VoiceStatus, input: task1Input, handler: handleTask1Command };
-  }
-  return { btn: voiceBtn, status: voiceStatus, input: commandInput, handler: handleUserCommand };
+  return { btn: task1VoiceBtn, status: task1VoiceStatus, input: task1Input, handler: handleTask1Command };
 }
 
 function initVoiceInput() {
@@ -637,7 +629,10 @@ function resetChallenge() {
   if (task1Log) task1Log.innerHTML = "";
   task1History = [];
   addTask1Message("assistant", "**你好，AI创想家！这里是任务一。**\n\n请向我下达以下类型的指令，我会像语音助手一样响应：\n1. **常规指令**（如：什么是AI）\n2. **模糊指令**（如：我心情不太好）\n3. **连续对话**（根据刚才的话题继续问）\n\n*请在下方输入框告诉我，或者点击上方语音输入。*");
-  
+  resetTask2Form();
+}
+
+function resetTask2Form() {
   if (task2Scenario) task2Scenario.value = "";
   if (task2Design) task2Design.value = "";
   if (task2Effect) task2Effect.value = "";

@@ -15,6 +15,9 @@ const DATABASE_URL = process.env.DATABASE_URL || "";
 const dbPool = DATABASE_URL
   ? new Pool({
       connectionString: DATABASE_URL,
+      max: Number(process.env.PG_POOL_MAX || 10),
+      idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
+      connectionTimeoutMillis: Number(process.env.PG_CONN_TIMEOUT_MS || 5000),
       ssl: {
         rejectUnauthorized: false
       }
@@ -52,6 +55,18 @@ if (dbPool) {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `).catch(err => console.error("Failed to create sandbox_dialog table:", err));
+}
+
+const dialogQueue = [];
+const behaviorQueue = [];
+let flushInProgress = false;
+const DB_FLUSH_INTERVAL_MS = Number(process.env.DB_FLUSH_INTERVAL_MS || 1000);
+const DB_BATCH_SIZE = Number(process.env.DB_BATCH_SIZE || 50);
+
+if (dbPool) {
+  setInterval(() => {
+    void flushDbQueues();
+  }, DB_FLUSH_INTERVAL_MS).unref();
 }
 
 const MIME_TYPES = {
@@ -168,7 +183,7 @@ async function handleChat(req, res) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    await persistSandboxRecord({
+    enqueueDialogRecord({
       sessionId,
       dataType: "chat",
       userId,
@@ -192,7 +207,7 @@ async function handleChat(req, res) {
 
   const reply = data.choices?.[0]?.message?.content?.trim();
   if (!reply) {
-    await persistSandboxRecord({
+    enqueueDialogRecord({
       sessionId,
       dataType: "chat",
       userId,
@@ -211,7 +226,7 @@ async function handleChat(req, res) {
     return;
   }
 
-  await persistSandboxRecord({
+  enqueueDialogRecord({
     sessionId,
     dataType: "chat",
     userId,
@@ -227,7 +242,7 @@ async function handleChat(req, res) {
     }
   });
 
-  sendJson(res, 200, { reply, raw: data, sessionId });
+  sendJson(res, 200, { reply, sessionId });
 }
 
 async function handleGenerate(req, res) {
@@ -298,7 +313,7 @@ async function handleGenerate(req, res) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    await persistSandboxRecord({
+    enqueueDialogRecord({
       sessionId,
       dataType: "transfer",
       userId,
@@ -321,7 +336,7 @@ async function handleGenerate(req, res) {
 
   const content = data.choices?.[0]?.message?.content?.trim();
   if (!content) {
-    await persistSandboxRecord({
+    enqueueDialogRecord({
       sessionId,
       dataType: "transfer",
       userId,
@@ -339,7 +354,7 @@ async function handleGenerate(req, res) {
     return;
   }
 
-  await persistSandboxRecord({
+  enqueueDialogRecord({
     sessionId,
     dataType: "transfer",
     userId,
@@ -398,32 +413,33 @@ async function handleTranscribe(req, res) {
     return;
   }
 
-  sendJson(res, 200, { text, raw: data });
+  sendJson(res, 200, { text });
 }
 
 async function handleTrack(req, res) {
   const body = await readJson(req);
-  const sessionId = normalizeSessionId(body.sessionId);
-  const action = String(body.action || "").trim();
-  const detail = body.detail || {};
-  
   const clientIp = getClientIp(req);
   const userAgent = req.headers["user-agent"] || "";
-  let userId = normalizeOptionalText(body.userId);
-  if (!userId) {
-    const { createHash } = require("crypto");
-    userId = "device_" + createHash("md5").update(clientIp + userAgent).digest("hex").slice(0, 12);
-  }
+  const items = Array.isArray(body.events) ? body.events : [body];
 
-  if (dbPool) {
-    try {
-      await dbPool.query(
-        `INSERT INTO public.sandbox_behavior (session_id, user_id, action, detail) VALUES ($1, $2, $3, $4::jsonb)`,
-        [sessionId, userId, action, JSON.stringify({ ...detail, ip: clientIp, userAgent })]
-      );
-    } catch (err) {
-      console.error("Behavior tracking error:", err);
+  for (const item of items) {
+    const sessionId = normalizeSessionId(item.sessionId);
+    const action = String(item.action || "").trim();
+    const detail = item.detail || {};
+    if (!action) continue;
+
+    let userId = normalizeOptionalText(item.userId);
+    if (!userId) {
+      const { createHash } = require("crypto");
+      userId = "device_" + createHash("md5").update(clientIp + userAgent).digest("hex").slice(0, 12);
     }
+
+    enqueueBehaviorRecord({
+      sessionId,
+      userId,
+      action,
+      detail: { ...detail, ip: clientIp, userAgent, createdAt: item.createdAt || Date.now() }
+    });
   }
 
   sendJson(res, 200, { success: true });
@@ -441,18 +457,63 @@ function ensureApiKey(res) {
   return true;
 }
 
-async function persistSandboxRecord({
-  sessionId,
-  dataType,
-  userId,
-  userInput,
-  assistantOutput,
-  status,
-  meta
-}) {
+function enqueueDialogRecord(record) {
   if (!dbPool) {
     return false;
   }
+  dialogQueue.push(record);
+  if (dialogQueue.length >= DB_BATCH_SIZE) {
+    void flushDbQueues();
+  }
+  return true;
+}
+
+function enqueueBehaviorRecord(record) {
+  if (!dbPool) {
+    return false;
+  }
+  behaviorQueue.push(record);
+  if (behaviorQueue.length >= DB_BATCH_SIZE) {
+    void flushDbQueues();
+  }
+  return true;
+}
+
+async function flushDbQueues() {
+  if (!dbPool || flushInProgress) {
+    return;
+  }
+
+  flushInProgress = true;
+
+  try {
+    await flushDialogQueue();
+    await flushBehaviorQueue();
+  } finally {
+    flushInProgress = false;
+  }
+}
+
+async function flushDialogQueue() {
+  if (!dialogQueue.length) {
+    return;
+  }
+
+  const batch = dialogQueue.splice(0, DB_BATCH_SIZE);
+  const values = [];
+  const placeholders = batch.map((item, index) => {
+    const offset = index * 7;
+    values.push(
+      item.sessionId || randomUUID(),
+      item.dataType,
+      item.userId,
+      item.userInput,
+      item.assistantOutput,
+      item.status || "success",
+      JSON.stringify(item.meta || {})
+    );
+    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}::jsonb)`;
+  });
 
   try {
     await dbPool.query(
@@ -466,22 +527,42 @@ async function persistSandboxRecord({
           status,
           meta
         )
-        values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        values ${placeholders.join(", ")}
       `,
-      [
-        sessionId || randomUUID(),
-        dataType,
-        userId,
-        userInput,
-        assistantOutput,
-        status || "success",
-        JSON.stringify(meta || {})
-      ]
+      values
     );
-    return true;
   } catch (error) {
-    console.error("Failed to persist sandbox record:", error.message);
-    return false;
+    dialogQueue.unshift(...batch);
+    console.error("Failed to flush dialog queue:", error.message);
+  }
+}
+
+async function flushBehaviorQueue() {
+  if (!behaviorQueue.length) {
+    return;
+  }
+
+  const batch = behaviorQueue.splice(0, DB_BATCH_SIZE);
+  const values = [];
+  const placeholders = batch.map((item, index) => {
+    const offset = index * 4;
+    values.push(
+      item.sessionId || randomUUID(),
+      item.userId,
+      item.action,
+      JSON.stringify(item.detail || {})
+    );
+    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}::jsonb)`;
+  });
+
+  try {
+    await dbPool.query(
+      `INSERT INTO public.sandbox_behavior (session_id, user_id, action, detail) VALUES ${placeholders.join(", ")}`,
+      values
+    );
+  } catch (error) {
+    behaviorQueue.unshift(...batch);
+    console.error("Failed to flush behavior queue:", error.message);
   }
 }
 
